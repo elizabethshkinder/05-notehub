@@ -3,13 +3,12 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useDebounce } from "use-debounce";
 
-import { fetchNotes, createNote, deleteNote } from "../../services/noteService";
-
 import SearchBox from "../SearchBox/SearchBox";
 import Pagination from "../Pagination/Pagination";
 import NoteList from "../NoteList/NoteList";
 import Modal from "../Modal/Modal";
-import NoteForm, { type NoteFormValues } from "../NoteForm/NoteForm";
+import NoteForm from "../NoteForm/NoteForm";
+import { fetchNotes } from "../../services/noteService";
 
 export default function App() {
   const [page, setPage] = useState(1);
@@ -25,12 +24,7 @@ export default function App() {
     setSearch(value);
   };
 
-  const {
-    data,
-    isLoading,
-    isError,
-    refetch, 
-  } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["notes", page, debouncedSearch],
     queryFn: () => fetchNotes(page, debouncedSearch),
     placeholderData: keepPreviousData,
@@ -38,19 +32,6 @@ export default function App() {
 
   const notes = data?.notes ?? [];
   const totalPages = data?.totalPages ?? 0;
-
-  
-  const handleCreate = async (values: NoteFormValues) => {
-    await createNote(values);
-    closeModal();
-    setPage(1);
-    refetch();
-  };
-
-  const handleDelete = async (id: string) => {
-    await deleteNote(id);
-    refetch();
-  };
 
   return (
     <div className={css.app}>
@@ -69,15 +50,14 @@ export default function App() {
       {isLoading && <p>Loading...</p>}
       {isError && <p>Something went wrong</p>}
 
-      {notes.length > 0 && (
-        <NoteList notes={notes} onDelete={handleDelete} />
-      )}
-
+      {notes.length > 0 && <NoteList notes={notes} />}
+      
       {isModalOpen && (
         <Modal onClose={closeModal}>
-          <NoteForm onCancel={closeModal} onSubmit={handleCreate} />
+        <NoteForm onCloseModal={closeModal} />
         </Modal>
       )}
+
     </div>
   );
 }
